@@ -42,7 +42,7 @@ def authorize_google_calendar(mcst_number):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', SCOPES
                 )
-                flow.run_local_server(port=0, launch_browser=False, authorization_prompt_message="")
+                flow.run_local_server(port=0, launch_browser=True, authorization_prompt_message="")
 
             with open(token_path, 'wb') as token:
                 token.write(creds.to_bytes())

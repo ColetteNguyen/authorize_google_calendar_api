@@ -13,63 +13,69 @@ REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"]
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
 def fetch_credentials_file():
-    # Connect to the remote server using SSH
-    with paramiko.Transport((REMOTE_SERVER_HOST, REMOTE_SERVER_PORT)) as transport:
-        transport.connect(username=REMOTE_SERVER_USERNAME, password=REMOTE_SERVER_PASSWORD)
-        sftp = paramiko.SFTPClient.from_transport(transport)
+    try:
+        # Connect to the remote server using SSH
+        with paramiko.Transport((REMOTE_SERVER_HOST, REMOTE_SERVER_PORT)) as transport:
+            transport.connect(username=REMOTE_SERVER_USERNAME, password=REMOTE_SERVER_PASSWORD)
+            sftp = paramiko.SFTPClient.from_transport(transport)
 
-        # Download credentials.json
-        sftp.get('/root/waha_chatbot/authorise/credentials.json', 'credentials.json')
+            # Download credentials.json
+            sftp.get('/root/waha_chatbot/authorise/credentials.json', 'credentials.json')
 
-        sftp.close()
+            sftp.close()
+    except Exception as e:
+        st.error(f"Error fetching credentials file: {e}")
 
 def authorize_google_calendar(mcst_number):
-    creds = None
-    token_path = f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle"
+    try:
+        creds = None
+        token_path = f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle"
 
-    if os.path.exists(token_path):
-        creds = service_account.Credentials.from_service_account_file(
-            'credentials.json', scopes=SCOPES
-        )
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES
+        if os.path.exists(token_path):
+            creds = service_account.Credentials.from_service_account_file(
+                'credentials.json', scopes=SCOPES
             )
-            authorization_url, _ = flow.authorization_url(prompt='consent')
-            st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")
-            st.write("After authorization, come back to this page and click the 'Authorize' button.")
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    'credentials.json', SCOPES
+                )
+                authorization_url, _ = flow.authorization_url(prompt='consent')
+                st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")
+                st.write("After authorization, come back to this page and click the 'Authorize' button.")
+                st.stop()
+
+            with open(token_path, 'wb') as token:
+                token.write(creds.to_bytes())
+
+            # Authorization successful, stop the app
+            st.success("Authorization successful. You can close this window.")
             st.stop()
-
-        with open(token_path, 'wb') as token:
-            token.write(creds.to_bytes())
-
-        # Authorization successful, stop the app
-        st.success("Authorization successful. You can close this window.")
-        st.stop()
+    except Exception as e:
+        st.error(f"Error authorizing Google Calendar: {e}")
 
 def main():
     st.title("Google Calendar API Authorization with Streamlit")
 
-    # Get MCST number from user input
-    mcst_number = st.text_input("Enter MCST number:")
+    # Fetch credentials.json from the remote server
+    fetch_credentials_file()
 
-    # Check if MCST number is provided
-    if mcst_number:
-        # Fetch credentials.json from the remote server
-        fetch_credentials_file()
+    # Add an "Authorize" button
+    if st.button("Authorize"):
+        # Get MCST number from user input
+        mcst_number = st.text_input("Enter MCST number:")
 
-        # Create directory if not exists
-        os.makedirs(mcst_number, exist_ok=True)
+        # Check if MCST number is provided
+        if mcst_number:
+            # Create directory if not exists
+            os.makedirs(mcst_number, exist_ok=True)
 
-        # Add an "Authorise" button
-        if st.button("Authorise"):
             # Authorize and stop the app on success
             authorize_google_calendar(mcst_number)
-    else:
-        st.warning("Please enter the MCST number.")
+        else:
+            st.warning("Please enter the MCST number.")
 
 if __name__ == "__main__":
     main()

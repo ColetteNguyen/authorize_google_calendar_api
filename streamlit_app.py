@@ -61,6 +61,8 @@ def authorize_google_calendar(mcst_number):
                     'credentials.json', SCOPES,
                     redirect_uri='https://connectapi.streamlit.app'
                 )
+                authorization_url, _ = flow.authorization_url(prompt='consent')
+                st.markdown(f"Authorize the app by [visiting this link]({authorization_url}).")
                 creds = flow.run_local_server(port=0)
 
                 # Save the credentials to the token file

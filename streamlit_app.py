@@ -1,4 +1,3 @@
-import altair as alt
 import os
 import streamlit as st
 from google.oauth2 import service_account
@@ -61,8 +60,10 @@ def main():
         # Create directory if not exists
         os.makedirs(mcst_number, exist_ok=True)
 
-        # Authorize and stop the app on success
-        authorize_google_calendar(mcst_number)
+        # Add an "Authorize" button
+        if st.button("Authorize"):
+            # Authorize and stop the app on success
+            authorize_google_calendar(mcst_number)
     else:
         st.warning("Please enter the MCST number.")
 

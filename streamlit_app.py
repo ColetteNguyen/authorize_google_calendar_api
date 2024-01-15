@@ -30,7 +30,8 @@ def authorize_google_calendar(mcst_number):
     try:
         # Load credentials from the credentials.json file
         creds = None
-        token_path = f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle"
+        token_dir = f"/root/waha_chatbot/authorise/{mcst_number}"
+        token_path = os.path.join(token_dir, 'token.pickle')
 
         if os.path.exists(token_path):
             creds = service_account.Credentials.from_service_account_file(
@@ -40,17 +41,20 @@ def authorize_google_calendar(mcst_number):
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
+                # Ensure the directory exists before writing the file
+                os.makedirs(token_dir, exist_ok=True)
+                
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', SCOPES,
                     redirect_uri='https://connectapi.streamlit.app'
                 )
                 authorization_url, _ = flow.authorization_url(prompt='consent')
-                st.markdown(f"Authorize the app by visiting this link: [authorization_url]({authorization_url})")
-                # st.write("After authorization, come back to this page and click the 'Authorize' button.")
+                st.markdown(f"Authorize the app by [authorization_url]({authorization_url}).")
+                
                 st.stop()
 
-            with open(token_path, 'wb') as token:
-                token.write(creds.to_bytes())
+                with open(token_path, 'wb') as token:
+                    token.write(creds.to_bytes())
 
             # Authorization successful
             st.success("Authorization successful!")

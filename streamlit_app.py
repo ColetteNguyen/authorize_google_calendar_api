@@ -42,7 +42,7 @@ def authorize_google_calendar(mcst_number):
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', SCOPES,
-                    redirect_uri='urn:ietf:wg:oauth:2.0:oob'
+                    redirect_uri='https://connectapi.streamlit.app'
                 )
                 authorization_url, _ = flow.authorization_url(prompt='consent')
                 st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")

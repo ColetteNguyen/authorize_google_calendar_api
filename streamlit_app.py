@@ -41,16 +41,19 @@ def authorize_google_calendar(mcst_number):
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', SCOPES,
-                     redirect_uri='https://connectapi.streamlit.app/'  # Adjust as needed
+                    'credentials.json', SCOPES
                 )
-                flow.run_local_server(port=3000, authorization_prompt_message="")
+                authorization_url, _ = flow.authorization_url(prompt='consent')
+                st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")
+                st.write("After authorization, come back to this page and click the 'Authorize' button.")
+                st.stop()
 
             with open(token_path, 'wb') as token:
                 token.write(creds.to_bytes())
 
             # Authorization successful
             st.success("Authorization successful!")
+
 
     except Exception as e:
         st.error(f"Error authorizing Google Calendar: {e}")

@@ -22,7 +22,6 @@ def fetch_credentials_file():
         sftp.get('/root/waha_chatbot/authorise/credentials.json', 'credentials.json')
 
         sftp.close()
-
 def authorize_google_calendar(mcst_number):
     creds = None
     token_path = f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle"
@@ -38,7 +37,8 @@ def authorize_google_calendar(mcst_number):
             flow = InstalledAppFlow.from_client_secrets_file(
                 'credentials.json', SCOPES
             )
-            creds = flow.run_local_server(port=0)
+            # Set launch_browser to False
+            creds = flow.run_local_server(port=0, launch_browser=False)
         with open(token_path, 'wb') as token:
             token.write(creds.to_bytes())
         

@@ -26,12 +26,25 @@ def fetch_credentials_file():
     except Exception as e:
         st.error(f"Error fetching credentials file: {e}")
 
+def write_file_to_server(local_file_path, remote_file_path):
+    try:
+        # Connect to the remote server using SSH
+        with paramiko.Transport((REMOTE_SERVER_HOST, REMOTE_SERVER_PORT)) as transport:
+            transport.connect(username=REMOTE_SERVER_USERNAME, password=REMOTE_SERVER_PASSWORD)
+            sftp = paramiko.SFTPClient.from_transport(transport)
+
+            # Upload the local file to the remote server
+            sftp.put(local_file_path, remote_file_path)
+
+            sftp.close()
+    except Exception as e:
+        st.error(f"Error writing file to server: {e}")
+
 def authorize_google_calendar(mcst_number):
     try:
         # Load credentials from the credentials.json file
         creds = None
-        token_dir = f"~/waha_chatbot/authorise/"
-        token_path = os.path.expanduser(os.path.join(token_dir, 'token.pickle'))
+        token_path = f"./{mcst_number}/token.pickle"
 
         if os.path.exists(token_path):
             creds = service_account.Credentials.from_service_account_file(
@@ -42,7 +55,7 @@ def authorize_google_calendar(mcst_number):
                 creds.refresh(Request())
             else:
                 # Ensure the directory exists before writing the file
-                os.makedirs(token_dir, exist_ok=True)
+                os.makedirs(mcst_number, exist_ok=True)
                 
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', SCOPES,
@@ -55,12 +68,14 @@ def authorize_google_calendar(mcst_number):
                 with open(token_path, 'wb') as token:
                     token.write(creds.to_bytes())
 
+                # Now, let's write the token.pickle file to the server
+                write_file_to_server(token_path, f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle")
+
             # Authorization successful
             st.success("Authorization successful!")
 
     except Exception as e:
         st.error(f"Error authorizing Google Calendar: {e}")
-
         
 def main():
     st.title("Google Calendar API Authorization")

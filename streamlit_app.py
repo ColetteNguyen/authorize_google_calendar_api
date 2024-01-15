@@ -25,8 +25,37 @@ def fetch_credentials_file():
             sftp.close()
     except Exception as e:
         st.error(f"Error fetching credentials file: {e}")
-        
 
+def authorize_google_calendar(mcst_number):
+    try:
+        # Load credentials from the credentials.json file
+        creds = None
+        token_path = f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle"
+
+        if os.path.exists(token_path):
+            creds = service_account.Credentials.from_service_account_file(
+                'credentials.json', scopes=SCOPES
+            )
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    'credentials.json', SCOPES
+                )
+                authorization_url, _ = flow.authorization_url(prompt='consent')
+                st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")
+                st.write("After authorization, come back to this page and click the 'Authorize' button.")
+                st.stop()
+
+            with open(token_path, 'wb') as token:
+                token.write(creds.to_bytes())
+
+            # Authorization successful
+            st.success("Authorization successful!")
+
+    except Exception as e:
+        st.error(f"Error authorizing Google Calendar: {e}")
 
         
 def main():

@@ -123,7 +123,6 @@
 # if __name__ == "__main__":
 #     main()
 
-
 import os
 import streamlit as st
 from google.oauth2 import service_account
@@ -175,7 +174,7 @@ def simulate_authorization(mcst_number):
                 # Exchange the authorization code for credentials
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', SCOPES,
-                    redirect_uri='https://connectapi.streamlit.app'
+                    redirect_uri='urn:ietf:wg:oauth:2.0:oob'
                 )
 
                 credentials = flow.fetch_token(code=auth_code)
@@ -210,4 +209,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

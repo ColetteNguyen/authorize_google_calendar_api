@@ -45,8 +45,8 @@ def authorize_google_calendar(mcst_number):
                     redirect_uri='https://connectapi.streamlit.app'
                 )
                 authorization_url, _ = flow.authorization_url(prompt='consent')
-                st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")
-                st.write("After authorization, come back to this page and click the 'Authorize' button.")
+                st.markdown(f"Authorize the app by visiting this link: [authorization_url]({authorization_url})")
+                # st.write("After authorization, come back to this page and click the 'Authorize' button.")
                 st.stop()
 
             with open(token_path, 'wb') as token:

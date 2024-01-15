@@ -10,7 +10,7 @@ REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"]
 REMOTE_SERVER_USERNAME = st.secrets["REMOTE_SERVER_USERNAME"]
 REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"]
 
-SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/calendar.events']
 
 def fetch_credentials_file():
     try:
@@ -25,6 +25,7 @@ def fetch_credentials_file():
             sftp.close()
     except Exception as e:
         st.error(f"Error fetching credentials file: {e}")
+        
 
 def authorize_google_calendar(mcst_number):
     try:
@@ -40,9 +41,10 @@ def authorize_google_calendar(mcst_number):
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', SCOPES
+                    'credentials.json', SCOPES,
+                     redirect_uri='https://connectapi.streamlit.app/'  # Adjust as needed
                 )
-                flow.run_local_server(port=0, launch_browser=True, authorization_prompt_message="")
+                flow.run_local_server(port=0, authorization_prompt_message="")
 
             with open(token_path, 'wb') as token:
                 token.write(creds.to_bytes())

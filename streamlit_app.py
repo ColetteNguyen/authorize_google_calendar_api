@@ -42,17 +42,14 @@ def authorize_google_calendar(mcst_number):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', SCOPES
                 )
-                authorization_url, _ = flow.authorization_url(prompt='consent')
-                st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")
-                st.write("After authorization, come back to this page and click the 'Authorize' button.")
-                st.stop()
-
+                creds = flow.run_local_server(port=0, authorization_prompt_message="")
+                
             with open(token_path, 'wb') as token:
                 token.write(creds.to_bytes())
 
-            # Authorization successful, stop the app
-            st.success("Authorization successful. You can close this window.")
-            st.stop()
+            # Authorization successful
+            st.success("Authorization successful!")
+
     except Exception as e:
         st.error(f"Error authorizing Google Calendar: {e}")
 
@@ -62,20 +59,19 @@ def main():
     # Fetch credentials.json from the remote server
     fetch_credentials_file()
 
-    # Add an "Authorize" button
-    if st.button("Authorize"):
-        # Get MCST number from user input
-        mcst_number = st.text_input("Enter MCST number:")
+    # Get MCST number from user input
+    mcst_number = st.text_input("Enter MCST number:")
+    authorize_button = st.button('Authorise')
+    
+    # Check if MCST number is provided
+    if mcst_number:
+        # Create directory if not exists
+        os.makedirs(mcst_number, exist_ok=True)
 
-        # Check if MCST number is provided
-        if mcst_number:
-            # Create directory if not exists
-            os.makedirs(mcst_number, exist_ok=True)
-
-            # Authorize and stop the app on success
+        # Add an "Authorize" button
+        if st.button("Authorize"):
+            # Authorize
             authorize_google_calendar(mcst_number)
-        else:
-            st.warning("Please enter the MCST number.")
 
 if __name__ == "__main__":
     main()

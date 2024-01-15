@@ -1,59 +1,70 @@
 import altair as alt
-import numpy as np
-import pandas as pd
+import os
 import streamlit as st
-import pymongo
+from google.oauth2 import service_account
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+import paramiko
 
-CONNECTION_STRING = "mongodb+srv://colette:6xUTl6YRSY8mHoaK@telegrambot.zulss7f.mongodb.net/test"
-client = pymongo.MongoClient(CONNECTION_STRING)
-dbname = client['new_facility_booking']
-collection = dbname["roles"]
+REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"])
+REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"])
+REMOTE_SERVER_USERNAME = st.secrets["REMOTE_SERVER_USERNAME"])
+REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"])
 
-"""
-# Welcome to the Facility Management chatbot!
-"""
+SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
-# Display input fields with labels indicating required and optional fields
-with st.form(key='myform', clear_on_submit=True):
-    whatsapp_number = st.text_input('WhatsApp number* (Required)')
-    mcst_number = st.text_input('MCST number* (Required)')
-    resident_unit_number = st.text_input('Resident Unit number* (Required)')
-    name = st.text_input('Name* (Required)')
-    email = st.text_input('Email (Optional)')
-    agree = st.checkbox('I agree to the PDPC policy (Required)')
-    submit_button = st.form_submit_button('Submit')
-    submitted = False
+def fetch_credentials_file():
+    # Connect to the remote server using SSH
+    with paramiko.Transport((REMOTE_SERVER_HOST, REMOTE_SERVER_PORT)) as transport:
+        transport.connect(username=REMOTE_SERVER_USERNAME, password=REMOTE_SERVER_PASSWORD)
+        sftp = paramiko.SFTPClient.from_transport(transport)
 
-if submit_button:
-    # Check for required fields
-    if not whatsapp_number or not mcst_number or not resident_unit_number or not name or not agree:
-        st.warning('All required fields must be filled, and PDPC policy must be agreed to before submitting.')
-    else:
-        # Check if WhatsApp number already exists
-        existing_record = collection.find_one({'whatsapp_number': whatsapp_number})
+        # Download credentials.json
+        sftp.get('path/to/your/credentials.json', 'credentials.json')
 
-        if existing_record:
-            st.warning(f'The WhatsApp number {whatsapp_number} already exists. You can use the chatbot.')
+        sftp.close()
+
+def authorize_google_calendar(mcst_number):
+    creds = None
+    token_path = f"{mcst_number}/token.pickle"
+
+    if os.path.exists(token_path):
+        creds = service_account.Credentials.from_service_account_file(
+            'credentials.json', scopes=SCOPES
+        )
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
         else:
-            form_data = {
-                'role': 'resident',
-                'phone_number': whatsapp_number,
-                'mcst_no': mcst_number,
-                'resident_unit_number': resident_unit_number,
-                'name': name,
-                'email': email
-            }
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES
+            )
+            creds = flow.run_local_server(port=0)
+        with open(token_path, 'wb') as token:
+            token.write(creds.to_bytes())
+        
+        # Authorization successful, stop the app
+        st.success("Authorization successful. You can close this window.")
+        st.stop()
 
-            collection.insert_one(form_data)
+def main():
+    st.title("Google Calendar API Authorization with Streamlit")
 
-            # Display a success message in a popup
-            st.success('Data submitted successfully! Now, you can use the chatbot')
+    # Get MCST number from user input
+    mcst_number = st.text_input("Enter MCST number:")
+    
+    # Check if MCST number is provided
+    if mcst_number:
+        # Fetch credentials.json from the remote server
+        fetch_credentials_file()
 
-            # Reset form fields after successful submission
-            submitted = True
-            whatsapp_number = ""
-            mcst_number = ""
-            resident_unit_number = ""
-            name = ""
-            email = ""
-            agree = False
+        # Create directory if not exists
+        os.makedirs(mcst_number, exist_ok=True)
+
+        # Authorize and stop the app on success
+        authorize_google_calendar(mcst_number)
+    else:
+        st.warning("Please enter the MCST number.")
+
+if __name__ == "__main__":
+    main()

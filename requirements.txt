@@ -2,3 +2,8 @@ altair
 pandas
 streamlit
 pymongo
+paramiko
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+

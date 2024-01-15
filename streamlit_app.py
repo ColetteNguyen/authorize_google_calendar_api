@@ -6,10 +6,10 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import paramiko
 
-REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"])
-REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"])
-REMOTE_SERVER_USERNAME = st.secrets["REMOTE_SERVER_USERNAME"])
-REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"])
+REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"]
+REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"]
+REMOTE_SERVER_USERNAME = st.secrets["REMOTE_SERVER_USERNAME"]
+REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"]
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 

@@ -42,8 +42,8 @@ def authorize_google_calendar(mcst_number):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', SCOPES
                 )
-                creds = flow.run_local_server(port=0, authorization_prompt_message="")
-                
+                flow.run_local_server(port=0, launch_browser=False, authorization_prompt_message="")
+
             with open(token_path, 'wb') as token:
                 token.write(creds.to_bytes())
 
@@ -52,7 +52,7 @@ def authorize_google_calendar(mcst_number):
 
     except Exception as e:
         st.error(f"Error authorizing Google Calendar: {e}")
-
+        
 def main():
     st.title("Google Calendar API Authorization with Streamlit")
 
@@ -61,17 +61,19 @@ def main():
 
     # Get MCST number from user input
     mcst_number = st.text_input("Enter MCST number:")
-    authorize_button = st.button('Authorise')
     
-    # Check if MCST number is provided
-    if mcst_number:
-        # Create directory if not exists
-        os.makedirs(mcst_number, exist_ok=True)
+    # Add an "Authorize" button
+    if st.button("Authorize"):
+        # Check if MCST number is provided
+        if mcst_number:
+            # Create directory if not exists
+            os.makedirs(mcst_number, exist_ok=True)
 
-        # Add an "Authorize" button
-        if st.button("Authorize"):
             # Authorize
             authorize_google_calendar(mcst_number)
+        else:
+            st.warning("Please enter the MCST number.")
+
 
 if __name__ == "__main__":
     main()

@@ -63,16 +63,23 @@ def authorize_google_calendar(mcst_number):
                 )
                 authorization_url, _ = flow.authorization_url(prompt='consent')
                 st.markdown(f"Authorize the app by [visiting this link]({authorization_url}).")
+
+                # Assuming you have a 'Click to Authorize' button
+                if st.button("Click to Authorize"):
+                    # Complete the authorization flow
+                    creds = flow.run_local_server(port=0)
+
+                    # Save the credentials to the token file
+                    with open(token_path, 'wb') as token:
+                        pickle.dump(creds, token)
+
+                    # Write the token file to the server
+                    write_file_to_server(token_path, f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle")
+
+                    # Authorization successful
+                    st.success("Authorization successful!")
+
                 st.stop()
-
-                with open(token_path, 'wb') as token:
-                    token.write(creds.to_bytes())
-
-                # Now, let's write the token.pickle file to the server
-                write_file_to_server(token_path, f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle")
-
-            # Authorization successful
-            st.success("Authorization successful!")
 
     except Exception as e:
         st.error(f"Error authorizing Google Calendar: {e}")

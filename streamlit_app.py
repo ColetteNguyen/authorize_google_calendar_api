@@ -22,6 +22,7 @@ def fetch_credentials_file():
         sftp.get('/root/waha_chatbot/authorise/credentials.json', 'credentials.json')
 
         sftp.close()
+
 def authorize_google_calendar(mcst_number):
     creds = None
     token_path = f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle"
@@ -37,11 +38,14 @@ def authorize_google_calendar(mcst_number):
             flow = InstalledAppFlow.from_client_secrets_file(
                 'credentials.json', SCOPES
             )
-            # Set launch_browser to False
-            creds = flow.run_local_server(port=0, launch_browser=False)
+            authorization_url, _ = flow.authorization_url(prompt='consent')
+            st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")
+            st.write("After authorization, come back to this page and click the 'Authorize' button.")
+            st.stop()
+
         with open(token_path, 'wb') as token:
             token.write(creds.to_bytes())
-        
+
         # Authorization successful, stop the app
         st.success("Authorization successful. You can close this window.")
         st.stop()
@@ -51,7 +55,7 @@ def main():
 
     # Get MCST number from user input
     mcst_number = st.text_input("Enter MCST number:")
-    
+
     # Check if MCST number is provided
     if mcst_number:
         # Fetch credentials.json from the remote server

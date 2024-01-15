@@ -159,6 +159,7 @@ def simulate_authorization(mcst_number):
 
         # Load credentials from the credentials.json file
         token_path = f"./{mcst_number}/token.pickle"
+        creds = ""
 
         if os.path.exists(token_path):
             creds = service_account.Credentials.from_service_account_file(

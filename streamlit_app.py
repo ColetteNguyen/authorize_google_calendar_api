@@ -20,13 +20,13 @@ def fetch_credentials_file():
         sftp = paramiko.SFTPClient.from_transport(transport)
 
         # Download credentials.json
-        sftp.get('path/to/your/credentials.json', 'credentials.json')
+        sftp.get('/root/waha_chatbot/credentials.json', 'credentials.json')
 
         sftp.close()
 
 def authorize_google_calendar(mcst_number):
     creds = None
-    token_path = f"{mcst_number}/token.pickle"
+    token_path = f"/root/waha_chatbot/{mcst_number}/token.pickle"
 
     if os.path.exists(token_path):
         creds = service_account.Credentials.from_service_account_file(

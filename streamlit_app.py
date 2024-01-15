@@ -44,7 +44,7 @@ def authorize_google_calendar(mcst_number):
                     'credentials.json', SCOPES,
                      redirect_uri='https://connectapi.streamlit.app/'  # Adjust as needed
                 )
-                flow.run_local_server(port=0, authorization_prompt_message="")
+                flow.run_local_server(port=3000, authorization_prompt_message="")
 
             with open(token_path, 'wb') as token:
                 token.write(creds.to_bytes())

@@ -41,7 +41,8 @@ def authorize_google_calendar(mcst_number):
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', SCOPES
+                    'credentials.json', SCOPES,
+                    redirect_uri='urn:ietf:wg:oauth:2.0:oob'
                 )
                 authorization_url, _ = flow.authorization_url(prompt='consent')
                 st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")
@@ -59,7 +60,7 @@ def authorize_google_calendar(mcst_number):
 
         
 def main():
-    st.title("Google Calendar API Authorization with Streamlit")
+    st.title("Google Calendar API Authorization")
 
     # Fetch credentials.json from the remote server
     fetch_credentials_file()

@@ -61,25 +61,37 @@ def authorize_google_calendar(mcst_number):
                     'credentials.json', SCOPES,
                     redirect_uri='https://connectapi.streamlit.app'
                 )
-                authorization_url, _ = flow.authorization_url(prompt='consent')
-                st.markdown(f"Authorize the app by [visiting this link]({authorization_url}).")
+                creds = flow.run_local_server(port=0)
+
+                # Save the credentials to the token file
+                with open(token_path, 'wb') as token:
+                    pickle.dump(creds, token)
+
+                # Write the token file to the server
+                write_file_to_server(token_path, f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle")
+
+                # Authorization successful
+                st.success("Authorization successful!")
+                # authorization_url, _ = flow.authorization_url(prompt='consent')
+                # st.markdown(f"Authorize the app by [visiting this link]({authorization_url}).")
+                
 
                 # Assuming you have a 'Click to Authorize' button
-                if st.button("Click to Authorize"):
-                    # Complete the authorization flow
-                    creds = flow.run_local_server(port=0)
+                # if st.button("Click to Authorize"):
+                #     # Complete the authorization flow
+                #     creds = flow.run_local_server(port=0)
 
-                    # Save the credentials to the token file
-                    with open(token_path, 'wb') as token:
-                        pickle.dump(creds, token)
+                #     # Save the credentials to the token file
+                #     with open(token_path, 'wb') as token:
+                #         pickle.dump(creds, token)
 
-                    # Write the token file to the server
-                    write_file_to_server(token_path, f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle")
+                #     # Write the token file to the server
+                #     write_file_to_server(token_path, f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle")
 
-                    # Authorization successful
-                    st.success("Authorization successful!")
+                #     # Authorization successful
+                #     st.success("Authorization successful!")
 
-                st.stop()
+                # st.stop()
 
     except Exception as e:
         st.error(f"Error authorizing Google Calendar: {e}")

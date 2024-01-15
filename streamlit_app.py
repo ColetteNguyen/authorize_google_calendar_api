@@ -19,13 +19,13 @@ def fetch_credentials_file():
         sftp = paramiko.SFTPClient.from_transport(transport)
 
         # Download credentials.json
-        sftp.get('/root/waha_chatbot/credentials.json', 'credentials.json')
+        sftp.get('/root/waha_chatbot/authorise/credentials.json', 'credentials.json')
 
         sftp.close()
 
 def authorize_google_calendar(mcst_number):
     creds = None
-    token_path = f"/root/waha_chatbot/{mcst_number}/token.pickle"
+    token_path = f"/root/waha_chatbot/authorise/{mcst_number}/token.pickle"
 
     if os.path.exists(token_path):
         creds = service_account.Credentials.from_service_account_file(
@@ -60,8 +60,8 @@ def main():
         # Create directory if not exists
         os.makedirs(mcst_number, exist_ok=True)
 
-        # Add an "Authorize" button
-        if st.button("Authorize"):
+        # Add an "Authorise" button
+        if st.button("Authorise"):
             # Authorize and stop the app on success
             authorize_google_calendar(mcst_number)
     else:

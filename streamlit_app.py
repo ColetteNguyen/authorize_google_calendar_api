@@ -3,7 +3,7 @@
 # from google.oauth2 import service_account
 # from google_auth_oauthlib.flow import InstalledAppFlow
 # from google.auth.transport.requests import Request
-# import paramiko
+import paramiko
 
 # REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"]
 # REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"]

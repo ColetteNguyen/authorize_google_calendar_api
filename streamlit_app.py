@@ -129,7 +129,6 @@ from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import pickle
-import paramiko
 
 REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"]
 REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"]
@@ -152,14 +151,11 @@ def fetch_credentials_file():
     except Exception as e:
         st.error(f"Error fetching credentials file: {e}")
 
-def simulate_authorization(mcst_number):
+def authorize_google_calendar(mcst_number):
     try:
-        # Simulate an automatic authorization by hardcoding an authorization code
-        auth_code = "YOUR_HARDCODED_AUTH_CODE"  # Replace with the actual authorization code
-
         # Load credentials from the credentials.json file
+        creds = None
         token_path = f"./{mcst_number}/token.pickle"
-        creds = ""
 
         if os.path.exists(token_path):
             creds = service_account.Credentials.from_service_account_file(
@@ -172,23 +168,34 @@ def simulate_authorization(mcst_number):
                 # Ensure the directory exists before writing the file
                 os.makedirs(mcst_number, exist_ok=True)
 
-                # Exchange the authorization code for credentials
+                # Display the authorization link
                 flow = InstalledAppFlow.from_client_secrets_file(
                     'credentials.json', SCOPES,
                     redirect_uri='urn:ietf:wg:oauth:2.0:oob'
                 )
+                authorization_url, _ = flow.authorization_url(prompt='consent')
 
-                credentials = flow.fetch_token(code=auth_code)
+                # Display the authorization URL to the user
+                st.markdown(f"Authorize the app by [visiting this link]({authorization_url}).")
+                st.write("After authorizing, copy the authorization code and paste it below.")
 
-                # Save the credentials to the token file
-                with open(token_path, 'wb') as token:
-                    pickle.dump(credentials, token)
+                # User input for authorization code
+                auth_code = st.text_input("Enter Authorization Code:")
 
-                # Authorization successful
-                st.success("Authorization successful!")
+                # Check if the user has provided an authorization code
+                if auth_code:
+                    # Exchange the authorization code for credentials
+                    credentials = flow.fetch_token(code=auth_code)
+
+                    # Save the credentials to the token file
+                    with open(token_path, 'wb') as token:
+                        pickle.dump(credentials, token)
+
+                    # Authorization successful
+                    st.success("Authorization successful!")
 
     except Exception as e:
-        st.error(f"Error simulating authorization: {e}")
+        st.error(f"Error authorizing Google Calendar: {e}")
 
 def main():
     st.title("Google Calendar API Authorization")
@@ -199,12 +206,12 @@ def main():
     # Get MCST number from user input
     mcst_number = st.text_input("Enter MCST number:")
 
-    # Add a "Simulate Authorization" button
-    if st.button("Simulate Authorization"):
+    # Add an "Authorize" button
+    if st.button("Authorize"):
         # Check if MCST number is provided
         if mcst_number:
-            # Simulate an automatic authorization
-            simulate_authorization(mcst_number)
+            # Authorize
+            authorize_google_calendar(mcst_number)
         else:
             st.warning("Please enter the MCST number.")
 

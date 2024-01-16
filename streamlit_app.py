@@ -124,12 +124,16 @@ import paramiko
 #     main()
 
 import os
+import logging
 import streamlit as st
 from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import pickle
 import paramiko
+
+# Set up logging
+logging.basicConfig(filename='streamlit_app.log', level=logging.DEBUG)
 
 REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"]
 REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"]
@@ -152,6 +156,7 @@ def fetch_credentials_file():
 
             sftp.close()
     except Exception as e:
+        logging.error(f"Error fetching credentials file: {e}")
         st.error(f"Error fetching credentials file: {e}")
 
 def authorize_google_calendar(mcst_number):
@@ -159,7 +164,7 @@ def authorize_google_calendar(mcst_number):
         # Load credentials from the credentials.json file
         flow = InstalledAppFlow.from_client_secrets_file(
             'credentials.json', SCOPES,
-            redirect_uri='https://connectapi.streamlit.app'
+            redirect_uri=REDIRECT_URI
         )
         authorization_url, _ = flow.authorization_url(prompt='consent')
 
@@ -168,6 +173,7 @@ def authorize_google_calendar(mcst_number):
         st.stop()
 
     except Exception as e:
+        logging.error(f"Error authorizing Google Calendar: {e}")
         st.error(f"Error authorizing Google Calendar: {e}")
 
 def download_token_pickle(mcst_number):

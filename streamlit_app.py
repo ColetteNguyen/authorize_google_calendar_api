@@ -62,10 +62,8 @@ def main():
     mcst_number = st.text_input("Enter MCST Number:")
     date = st.date_input("Select Date:")
 
-    # File upload
-    uploaded_file = st.file_uploader("Upload your mcst file", type=["mcst"])
-
-    if uploaded_file:
+    # Button to trigger authorization
+    if st.button("Authorize Google Calendar"):
         # Connect to Google Calendar API and authorize
         creds = authorize_google_calendar()
 
@@ -73,21 +71,20 @@ def main():
         save_to_mongodb(mcst_number, date, creds)
         st.success("Authorization successful. Data saved to MongoDB.")
 
-        # Button to retrieve token data from MongoDB
-        if st.button("Get Data from MongoDB"):
-            result = collection.find_one({"mcst_number": mcst_number, "date": date})
-            if result:
-                # Decode and load the token data
-                token_data = pickle.loads(base64.b64decode(result["token_base64_data"]))
+    # Button to retrieve token data from MongoDB
+    if st.button("Get Data from MongoDB"):
+        result = collection.find_one({"mcst_number": mcst_number, "date": date})
+        if result:
+            # Decode and load the token data
+            token_data = pickle.loads(base64.b64decode(result["token_base64_data"]))
 
-                # Save token.pickle to a local file
-                with open("token.pickle", "wb") as token_file:
-                    token_file.write(token_data)
+            # Save token.pickle to a local file
+            with open("token.pickle", "wb") as token_file:
+                token_file.write(token_data)
 
-                st.success("Token data retrieved from MongoDB.")
-            else:
-                st.warning("Data not found in MongoDB.")
+            st.success("Token data retrieved from MongoDB.")
+        else:
+            st.warning("Data not found in MongoDB.")
 
 if __name__ == "__main__":
     main()
-

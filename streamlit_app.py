@@ -138,7 +138,7 @@ REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"]
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/calendar.events']
 # CLIENT_SECRETS = '/root/waha_chatbot/authorise/credentials.json'
-REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
+REDIRECT_URI = 'https://connectapi.streamlit.app'
 
 def fetch_credentials_file():
     try:

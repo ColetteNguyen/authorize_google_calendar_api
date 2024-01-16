@@ -6,6 +6,7 @@ import pickle
 import base64
 import paramiko
 from io import BytesIO
+import json
 
 # Connect to MongoDB
 CONNECTION_STRING = "mongodb+srv://colette:6xUTl6YRSY8mHoaK@telegrambot.zulss7f.mongodb.net/test"
@@ -17,7 +18,10 @@ collection = dbname["token_files"]
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 def authorize_google_calendar():
-    flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+    # Read the contents of credentials.json directly
+    client_config = json.loads(st.secrets["GOOGLE_CREDENTIALS_JSON"])
+
+    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
     creds = flow.run_local_server(port=0)
     return creds
 

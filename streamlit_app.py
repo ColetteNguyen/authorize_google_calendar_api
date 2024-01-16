@@ -126,9 +126,14 @@ import paramiko
 import os
 import logging
 import streamlit as st
+from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 import pickle
 import paramiko
+
+# Set up logging
+logging.basicConfig(filename='streamlit_app.log', level=logging.DEBUG)
 
 REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"]
 REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"]

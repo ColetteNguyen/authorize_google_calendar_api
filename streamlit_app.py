@@ -18,8 +18,8 @@ collection = dbname["token_files"]
 # Google Calendar API credentials
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
-def authorize_google_calendar(credentials_json_data):
-    # Load credentials using the provided JSON data
+def authorize_google_calendar(mcst_number, credentials_json_data):
+    # Load credentials from the provided JSON data
     client_config = json.loads(credentials_json_data)
     creds = service_account.Credentials.from_service_account_info(client_config, scopes=SCOPES)
     return creds
@@ -37,7 +37,7 @@ def save_to_mongodb(mcst_number, date, token_data):
 
     collection.insert_one(document)
 
-def get_credentials_from_server():
+def get_credentials_from_server(mcst_number):
     # SSH Connection details
     ssh_host = st.secrets["REMOTE_SERVER_HOST"]
     ssh_port = st.secrets["REMOTE_SERVER_PORT"]
@@ -45,7 +45,7 @@ def get_credentials_from_server():
     ssh_password = st.secrets["REMOTE_SERVER_PASSWORD"]
   
     # Remote file path on the Ubuntu server
-    remote_credentials_path = "/path/to/credentials.json"
+    remote_credentials_path = f"/path/to/{mcst_number}/credentials.json"
 
     # Connect to the server using SSH
     with paramiko.SSHClient() as ssh:
@@ -68,10 +68,10 @@ def main():
     # Button to trigger authorization
     if st.button("Authorize Google Calendar"):
         # Fetch credentials.json from the server
-        credentials_json_data = get_credentials_from_server()
+        credentials_json_data = get_credentials_from_server(mcst_number)
 
         # Authorize Google Calendar API
-        creds = authorize_google_calendar(credentials_json_data)
+        creds = authorize_google_calendar(mcst_number, credentials_json_data)
 
         # Save to MongoDB
         save_to_mongodb(mcst_number, date, creds)
@@ -84,9 +84,9 @@ def main():
             # Decode and load the token data
             token_data = pickle.loads(base64.b64decode(result["token_base64_data"]))
 
-            # Save token.pickle to a local file
-            with open("token.pickle", "wb") as token_file:
-                token_file.write(token_data)
+            # Save token.pickle to a local file if needed
+            # with open("token.pickle", "wb") as token_file:
+            #     token_file.write(token_data)
 
             st.success("Token data retrieved from MongoDB.")
         else:

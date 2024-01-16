@@ -137,7 +137,7 @@ REMOTE_SERVER_USERNAME = st.secrets["REMOTE_SERVER_USERNAME"]
 REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"]
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/calendar.events']
-CLIENT_SECRETS = '/root/waha_chatbot/authorise/credentials.json'
+# CLIENT_SECRETS = '/root/waha_chatbot/authorise/credentials.json'
 REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
 
 def fetch_credentials_file():
@@ -158,7 +158,7 @@ def authorize_google_calendar(mcst_number):
     try:
         # Load credentials from the credentials.json file
         flow = InstalledAppFlow.from_client_secrets_file(
-            CLIENT_SECRETS, SCOPES,
+            'credentials.json', SCOPES,
             redirect_uri=REDIRECT_URI
         )
         authorization_url, _ = flow.authorization_url(prompt='consent')

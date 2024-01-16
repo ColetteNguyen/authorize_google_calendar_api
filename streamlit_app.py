@@ -137,7 +137,7 @@ REMOTE_SERVER_USERNAME = st.secrets["REMOTE_SERVER_USERNAME"]
 REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"]
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/calendar.events']
-CLIENT_SECRETS = 'path/to/your/credentials.json'
+CLIENT_SECRETS = '/root/waha_chatbot/authorise/credentials.json'
 REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
 
 def fetch_credentials_file():
@@ -170,8 +170,8 @@ def authorize_google_calendar(mcst_number):
     except Exception as e:
         st.error(f"Error authorizing Google Calendar: {e}")
 
-def download_token_pickle():
-    token_filename = 'token.pickle'
+def download_token_pickle(mcst_number):
+    token_filename = f'/root/waha_chatbot/authorise/{mcst_number}/token.pickle'
     with open(token_filename, 'rb') as file:
         token_contents = file.read()
     st.download_button(
@@ -194,6 +194,9 @@ def main():
     if st.button("Authorize") and mcst_number:
         # Authorize
         authorize_google_calendar(mcst_number)
+
+        # Provide a button to download the token.pickle file
+        st.button("Download token.pickle", on_click=lambda: download_token_pickle(mcst_number))
 
 if __name__ == "__main__":
     main()

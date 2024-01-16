@@ -1,5 +1,6 @@
 import streamlit as st
 from pymongo import MongoClient
+from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 import os
 import pickle
@@ -17,12 +18,10 @@ collection = dbname["token_files"]
 # Google Calendar API credentials
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
-def authorize_google_calendar():
-    # Read the contents of credentials.json directly
-    client_config = json.loads(st.secrets["GOOGLE_CREDENTIALS_JSON"])
-
-    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-    creds = flow.run_local_server(port=0)
+def authorize_google_calendar(credentials_json_data):
+    # Load credentials using the provided JSON data
+    client_config = json.loads(credentials_json_data)
+    creds = service_account.Credentials.from_service_account_info(client_config, scopes=SCOPES)
     return creds
 
 def save_to_mongodb(mcst_number, date, token_data):
@@ -46,7 +45,7 @@ def get_credentials_from_server():
     ssh_password = st.secrets["REMOTE_SERVER_PASSWORD"]
   
     # Remote file path on the Ubuntu server
-    remote_credentials_path = "/root/waha_chatbot/authorise/credentials.json"
+    remote_credentials_path = "/path/to/credentials.json"
 
     # Connect to the server using SSH
     with paramiko.SSHClient() as ssh:
@@ -68,8 +67,11 @@ def main():
 
     # Button to trigger authorization
     if st.button("Authorize Google Calendar"):
-        # Connect to Google Calendar API and authorize
-        creds = authorize_google_calendar()
+        # Fetch credentials.json from the server
+        credentials_json_data = get_credentials_from_server()
+
+        # Authorize Google Calendar API
+        creds = authorize_google_calendar(credentials_json_data)
 
         # Save to MongoDB
         save_to_mongodb(mcst_number, date, creds)

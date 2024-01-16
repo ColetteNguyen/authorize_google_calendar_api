@@ -180,7 +180,7 @@ def download_token_pickle(mcst_number):
         # Exchange the authorization code for credentials
         auth_code = st.text_input("Enter Authorization Code:")
         flow = InstalledAppFlow.from_client_secrets_file(
-            CLIENT_SECRETS, SCOPES,
+            'credentials.json, SCOPES,
             redirect_uri=REDIRECT_URI
         )
         credentials = flow.fetch_token(code=auth_code)

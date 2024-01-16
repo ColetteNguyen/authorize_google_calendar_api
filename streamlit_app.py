@@ -126,14 +126,9 @@ import paramiko
 import os
 import logging
 import streamlit as st
-from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 import pickle
 import paramiko
-
-# Set up logging
-logging.basicConfig(filename='streamlit_app.log', level=logging.DEBUG)
 
 REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"]
 REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"]
@@ -169,23 +164,41 @@ def authorize_google_calendar(mcst_number):
         authorization_url, _ = flow.authorization_url(prompt='consent')
 
         st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")
-        st.write("After authorization, download the 'token.pickle' file and upload it to your server.")
-        st.stop()
-
+        st.write("After authorization, click the 'Download token.pickle' button.")
+        st.session_state.authorization_url = authorization_url
     except Exception as e:
         logging.error(f"Error authorizing Google Calendar: {e}")
         st.error(f"Error authorizing Google Calendar: {e}")
 
 def download_token_pickle(mcst_number):
-    token_filename = f'/root/waha_chatbot/authorise/{mcst_number}/token.pickle'
-    with open(token_filename, 'rb') as file:
-        token_contents = file.read()
-    st.download_button(
-        label="Click to download token.pickle",
-        data=token_contents,
-        key="token_pickle_download",
-        file_name="token.pickle"
-    )
+    try:
+        # Exchange the authorization code for credentials
+        auth_code = st.text_input("Enter Authorization Code:")
+        flow = InstalledAppFlow.from_client_secrets_file(
+            CLIENT_SECRETS, SCOPES,
+            redirect_uri=REDIRECT_URI
+        )
+        credentials = flow.fetch_token(code=auth_code)
+
+        # Save the credentials to the token file
+        token_filename = f'/root/waha_chatbot/authorise/{mcst_number}/token.pickle'
+        os.makedirs(os.path.dirname(token_filename), exist_ok=True)
+        with open(token_filename, 'wb') as token:
+            pickle.dump(credentials, token)
+
+        # Provide a button to download the token.pickle file
+        st.download_button(
+            label="Download token.pickle",
+            data=pickle.dumps(credentials),
+            key="token_pickle_download",
+            file_name="token.pickle"
+        )
+
+        # Authorization successful
+        st.success("Authorization successful!")
+    except Exception as e:
+        logging.error(f"Error downloading token.pickle: {e}")
+        st.error(f"Error downloading token.pickle: {e}")
 
 def main():
     st.title("Google Calendar API Authorization")
@@ -201,11 +214,13 @@ def main():
         # Authorize
         authorize_google_calendar(mcst_number)
 
-        # Provide a button to download the token.pickle file
-        st.button("Download token.pickle", on_click=lambda: download_token_pickle(mcst_number))
+    # Check if the authorization_url is in the session state
+    if hasattr(st.session_state, 'authorization_url'):
+        download_token_pickle(mcst_number)
 
 if __name__ == "__main__":
     main()
+
 
 
 

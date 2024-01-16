@@ -129,6 +129,7 @@ from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import pickle
+import paramiko
 
 REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"]
 REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"]
@@ -136,6 +137,8 @@ REMOTE_SERVER_USERNAME = st.secrets["REMOTE_SERVER_USERNAME"]
 REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"]
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/calendar.events']
+CLIENT_SECRETS = 'path/to/your/credentials.json'
+REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
 
 def fetch_credentials_file():
     try:
@@ -154,48 +157,29 @@ def fetch_credentials_file():
 def authorize_google_calendar(mcst_number):
     try:
         # Load credentials from the credentials.json file
-        creds = None
-        token_path = f"./{mcst_number}/token.pickle"
+        flow = InstalledAppFlow.from_client_secrets_file(
+            CLIENT_SECRETS, SCOPES,
+            redirect_uri=REDIRECT_URI
+        )
+        authorization_url, _ = flow.authorization_url(prompt='consent')
 
-        if os.path.exists(token_path):
-            creds = service_account.Credentials.from_service_account_file(
-                'credentials.json', scopes=SCOPES
-            )
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                # Ensure the directory exists before writing the file
-                os.makedirs(mcst_number, exist_ok=True)
-
-                # Display the authorization link
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'credentials.json', SCOPES,
-                    redirect_uri='https://connectapi.streamlit.app'
-                )
-                authorization_url, _ = flow.authorization_url(prompt='consent')
-
-                # Display the authorization URL to the user
-                st.markdown(f"Authorize the app by [visiting this link]({authorization_url}).")
-                st.write("After authorizing, copy the authorization code and paste it below.")
-
-                # User input for authorization code
-                auth_code = st.text_input("Enter Authorization Code:")
-
-                # Check if the user has provided an authorization code
-                if auth_code:
-                    # Exchange the authorization code for credentials
-                    credentials = flow.fetch_token(code=auth_code)
-
-                    # Save the credentials to the token file
-                    with open(token_path, 'wb') as token:
-                        pickle.dump(credentials, token)
-
-                    # Authorization successful
-                    st.success("Authorization successful!")
+        st.markdown(f"Authorize the app by visiting this link: [{authorization_url}]({authorization_url})")
+        st.write("After authorization, download the 'token.pickle' file and upload it to your server.")
+        st.stop()
 
     except Exception as e:
         st.error(f"Error authorizing Google Calendar: {e}")
+
+def download_token_pickle():
+    token_filename = 'token.pickle'
+    with open(token_filename, 'rb') as file:
+        token_contents = file.read()
+    st.download_button(
+        label="Click to download token.pickle",
+        data=token_contents,
+        key="token_pickle_download",
+        file_name="token.pickle"
+    )
 
 def main():
     st.title("Google Calendar API Authorization")
@@ -207,15 +191,12 @@ def main():
     mcst_number = st.text_input("Enter MCST number:")
 
     # Add an "Authorize" button
-    if st.button("Authorize"):
-        # Check if MCST number is provided
-        if mcst_number:
-            # Authorize
-            authorize_google_calendar(mcst_number)
-        else:
-            st.warning("Please enter the MCST number.")
+    if st.button("Authorize") and mcst_number:
+        # Authorize
+        authorize_google_calendar(mcst_number)
 
 if __name__ == "__main__":
     main()
+
 
 

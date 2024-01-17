@@ -5,14 +5,9 @@ import httpx_oauth
 import os
 
 # Load your Google API credentials
-CLIENT_ID = '196685723566-ogl0lpke69nn405drouc9msg95grja6f.apps.googleusercontent.com'
-CLIENT_SECRET = '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'
-REDIRECT_URI = 'https://connectapi.streamlit.app'
-
-# Set up Streamlit secrets
-st.secrets[CLIENT_ID] = os.getenv('CLIENT_ID', CLIENT_ID)
-st.secrets[CLIENT_SECRET] = os.getenv('CLIENT_SECRET', CLIENT_SECRET)
-st.secrets[REDIRECT_URI] = os.getenv('REDIRECT_URI', REDIRECT_URI)
+CLIENT_ID = st.secrets[CLIENT_ID]
+CLIENT_SECRET = st.secrets[CLIENT_SECRET]
+REDIRECT_URI = st.secrets[REDIRECT_URI]
 
 # Import the GoogleOAuth2 client
 from httpx_oauth.clients.google import GoogleOAuth2

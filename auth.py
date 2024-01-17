@@ -23,9 +23,17 @@ async def get_access_token(client: GoogleOAuth2, redirect_uri: str, code: str):
     return token
 
 
+# async def get_email(client: GoogleOAuth2, token: str):
+#     user_id, user_email = await client.get_id_email(token)
+#     return user_id, user_email
+
 async def get_email(client: GoogleOAuth2, token: str):
-    user_id, user_email = await client.get_id_email(token)
-    return user_id, user_email
+    try:
+        user_id, user_email = await client.get_id_email(token)
+        return user_id, user_email
+    except Exception as e:
+        print("Error in get_email:", e)
+        return None, None
 
 
 def get_login_str():

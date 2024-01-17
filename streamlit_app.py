@@ -28,15 +28,15 @@ def main():
 def authorize_google_calendar():
     # Create the GoogleOAuth2 client
     client = GoogleOAuth2(
-        st.secrets[CLIENT_ID],
-        st.secrets[CLIENT_SECRET],
+        CLIENT_ID,
+        CLIENT_SECRET,
         authorize_url="https://accounts.google.com/o/oauth2/auth",
         authorize_params={"scope": ["https://www.googleapis.com/auth/calendar"]},
         token_url="https://oauth2.googleapis.com/token",
     )
 
     # Get the authorization URL and redirect the user
-    authorization_url = client.get_authorization_url(st.secrets[REDIRECT_URI])
+    authorization_url = client.get_authorization_url(REDIRECT_URI)
     st.experimental_set_query_params(code="")  # Clear any previous code in the URL
     st.markdown(f"[Authorize Google Calendar]({authorization_url})", unsafe_allow_html=True)
 
@@ -44,7 +44,7 @@ def authorize_google_calendar():
     code = st.experimental_get_query_params().get("code", "")
     if code:
         # Exchange the authorization code for an access token
-        token = client.get_access_token(code, st.secrets[REDIRECT_URI])
+        token = client.get_access_token(code, REDIRECT_URI)
 
         # Store the access token in session state
         st.session_state.access_token = token["access_token"]
@@ -54,8 +54,8 @@ def authorize_google_calendar():
 def display_user():
     # Create the GoogleOAuth2 client
     client = GoogleOAuth2(
-        st.secrets[CLIENT_ID],
-        st.secrets[CLIENT_SECRET],
+       CLIENT_ID,
+        CLIENT_SECRET,
     )
 
     # Display user information

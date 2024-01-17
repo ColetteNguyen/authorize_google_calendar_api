@@ -4,13 +4,13 @@ from numpy import void
 import streamlit as st
 import asyncio
 from httpx_oauth.clients.google import GoogleOAuth2
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv('.env')
+# load_dotenv('.env')
 
-CLIENT_ID = ''
-CLIENT_SECRET = os.environ['CLIENT_SECRET']
-REDIRECT_URI = os.environ['REDIRECT_URI']
+CLIENT_ID = st.secrets["CLIENT_ID"]
+CLIENT_SECRET = st.secrets["CLIENT_SECRET"]
+REDIRECT_URI = st.secrets["REDIRECT_URI"]
 
 
 async def get_authorization_url(client: GoogleOAuth2, redirect_uri: str):

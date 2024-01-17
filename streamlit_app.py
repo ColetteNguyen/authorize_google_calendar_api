@@ -12,19 +12,6 @@ REDIRECT_URI = st.secrets['REDIRECT_URI']
 # Import the GoogleOAuth2 client
 from httpx_oauth.clients.google import GoogleOAuth2
 
-def main():
-    st.title("Google Calendar API Authorization")
-
-    # Check if the user is already authorized
-    if 'access_token' not in st.session_state:
-        # If not authorized, show the login button
-        if st.button("Authorize Google Calendar"):
-            authorize_google_calendar()
-
-    else:
-        # If authorized, display user information
-        display_user()
-
 def authorize_google_calendar():
     # Create the GoogleOAuth2 client
     client = GoogleOAuth2(
@@ -61,6 +48,17 @@ def display_user():
     # Display user information
     user_info = client.get("https://www.googleapis.com/oauth2/v2/userinfo").json()
     st.write(f"You're logged in as {user_info['email']}")
+def main():
+    st.title("Google Calendar API Authorization")
 
+    # Check if the user is already authorized
+    if 'access_token' not in st.session_state:
+        # If not authorized, show the login button
+        if st.button("Authorize Google Calendar"):
+            authorize_google_calendar()
+
+    else:
+        # If authorized, display user information
+        display_user()
 if __name__ == "__main__":
     main()

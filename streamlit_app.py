@@ -15,8 +15,8 @@ from httpx_oauth.clients.google import GoogleOAuth2
 def authorize_google_calendar():
     # Create the GoogleOAuth2 client
     client = GoogleOAuth2(
-        CLIENT_ID,
-        CLIENT_SECRET,
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET,
         authorize_url="https://accounts.google.com/o/oauth2/auth",
         authorize_params={"scope": ["https://www.googleapis.com/auth/calendar"]},
         token_url="https://oauth2.googleapis.com/token",
@@ -41,13 +41,14 @@ def authorize_google_calendar():
 def display_user():
     # Create the GoogleOAuth2 client
     client = GoogleOAuth2(
-       CLIENT_ID,
-        CLIENT_SECRET,
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET,
     )
 
     # Display user information
     user_info = client.get("https://www.googleapis.com/oauth2/v2/userinfo").json()
     st.write(f"You're logged in as {user_info['email']}")
+
 def main():
     st.title("Google Calendar API Authorization")
 
@@ -60,5 +61,6 @@ def main():
     else:
         # If authorized, display user information
         display_user()
+
 if __name__ == "__main__":
     main()

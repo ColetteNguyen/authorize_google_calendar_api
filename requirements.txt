@@ -6,4 +6,6 @@ paramiko
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
+httpx_oauth==0.5.0
+
 

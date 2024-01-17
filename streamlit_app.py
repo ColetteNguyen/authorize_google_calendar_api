@@ -5,9 +5,9 @@ import httpx_oauth
 import os
 
 # Load your Google API credentials
-CLIENT_ID = st.secrets[CLIENT_ID]
-CLIENT_SECRET = st.secrets[CLIENT_SECRET]
-REDIRECT_URI = st.secrets[REDIRECT_URI]
+CLIENT_ID = st.secrets['CLIENT_ID']
+CLIENT_SECRET = st.secrets['CLIENT_SECRET']
+REDIRECT_URI = st.secrets['REDIRECT_URI']
 
 # Import the GoogleOAuth2 client
 from httpx_oauth.clients.google import GoogleOAuth2

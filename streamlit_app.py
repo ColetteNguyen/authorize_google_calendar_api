@@ -17,9 +17,16 @@ st.title('Google Calendar Integration with Streamlit')
 
 # Streamlit app variables
 SESSION_STATE = st.session_state
-SESSION_STATE.mcst_number = None
-SESSION_STATE.state = None
-SESSION_STATE.google_token = None
+if not hasattr(SESSION_STATE, 'mcst_number'):
+    SESSION_STATE.mcst_number = None
+if not hasattr(SESSION_STATE, 'state'):
+    SESSION_STATE.state = None
+if not hasattr(SESSION_STATE, 'google_token'):
+    SESSION_STATE.google_token = None
+if not hasattr(SESSION_STATE, 'authorization_completed'):
+    SESSION_STATE.authorization_completed = False
+if not hasattr(SESSION_STATE, 'current_step'):
+    SESSION_STATE.current_step = 1
 
 SCOPES = ['https://www.googleapis.com/auth/calendar',
           'https://www.googleapis.com/auth/userinfo.email',
@@ -34,12 +41,17 @@ def step1_authorize():
     SESSION_STATE.mcst_number = st.text_input('Enter MCST Number:')
     
     if st.button('Next Step: Authorize Google Calendar'):
-        st.success('MCST Number saved. Proceed to the next step.')
+        SESSION_STATE.current_step = 2
 
 # Function to handle Google Calendar authorization
 def step2_authorize_google_calendar():
     st.header('Step 2: Authorize Google Calendar')
     
+    # Check if authorization has already been completed
+    if SESSION_STATE.authorization_completed:
+        st.warning("Authorization has already been completed. Reset the app to authorize again.")
+        return
+
     # Create flow instance to manage the OAuth 2.0 Authorization Grant Flow steps.
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE_PATH, scopes=SCOPES)
@@ -71,6 +83,9 @@ def step2_authorize_google_calendar():
         # Save credentials to token.pickle file on the remote server
         save_token_to_remote_server(SESSION_STATE.mcst_number, credentials_obj)
 
+        # Set the flag to indicate authorization completion
+        SESSION_STATE.authorization_completed = True
+
         st.success("Google Calendar integration successful!")
 
 # Function to save the token.pickle file on the remote server
@@ -93,7 +108,7 @@ def save_token_to_remote_server(mcst_number, credentials_obj):
         st.success(f"Token.pickle file saved on the remote server: {remote_file_path}")
 
 # Streamlit app routing
-if not SESSION_STATE.mcst_number:
+if SESSION_STATE.current_step == 1:
     step1_authorize()
-else:
+elif SESSION_STATE.current_step == 2:
     step2_authorize_google_calendar()

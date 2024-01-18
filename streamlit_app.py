@@ -98,12 +98,16 @@ def save_token_to_remote_server(mcst_number, credentials_obj):
         
         # Create the remote directory if it doesn't exist
         ssh.exec_command(f'mkdir -p /root/waha_chatbot/authorise/streamlit/{mcst_number}/')
+        # Set appropriate permissions for the directory
+        ssh.exec_command(f'chmod 700 /root/waha_chatbot/authorise/streamlit/{mcst_number}/')
 
         # Write the token.pickle file to the remote server
         with ssh.open_sftp() as sftp:
             remote_file_path = f'/root/waha_chatbot/authorise/streamlit/{mcst_number}/token.pickle'
             with sftp.file(remote_file_path, 'wb') as remote_file:
                 pickle.dump(credentials_obj, remote_file)
+        # Set appropriate permissions for the file
+        ssh.exec_command(f'chmod 600 {remote_file_path}')
         
         st.success(f"Token.pickle file saved on the remote server: {remote_file_path}")
 

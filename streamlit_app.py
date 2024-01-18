@@ -3,7 +3,6 @@ import paramiko
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 import os
-import pickle
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -49,9 +48,13 @@ if st.button("Authorize"):
         # Display the authorization URL
         st.write(f"Click [here]({authorization_url}) to authorize.")
 
+        # Initialize the state in the session_state
+        if "state" not in st.session_state:
+            st.session_state.state = None
+
         # Save the state and MCST number to the session_state
-        st.session_state["state"] = state
-        st.session_state["mcst_number"] = mcst_number
+        st.session_state.state = state
+        st.session_state.mcst_number = mcst_number
 
     except Exception as e:
         st.error(f"Error establishing SSH connection or loading credentials: {str(e)}")
@@ -59,7 +62,6 @@ if st.button("Authorize"):
         # Close the SFTP connection
         if sftp:
             sftp.close()
-
 # Streamlit callback for handling redirection
 @st.cache(allow_output_mutation=True)
 def get_flow():

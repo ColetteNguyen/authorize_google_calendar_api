@@ -86,8 +86,11 @@ def save_token_to_remote_server(mcst_number, credentials_obj):
 
         # Write the token.pickle file to the remote server
         with ssh.open_sftp() as sftp:
-            with sftp.file(f'/root/waha_chatbot/authorise/streamlit/{mcst_number}/token.pickle', 'wb') as remote_file:
+            remote_file_path = f'/root/waha_chatbot/authorise/streamlit/{mcst_number}/token.pickle'
+            with sftp.file(remote_file_path, 'wb') as remote_file:
                 pickle.dump(credentials_obj, remote_file)
+        
+        st.success(f"Token.pickle file saved on the remote server: {remote_file_path}")
 
 # Streamlit app routing
 if not SESSION_STATE.mcst_number:

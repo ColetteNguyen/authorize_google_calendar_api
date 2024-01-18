@@ -1,14 +1,12 @@
 import streamlit as st
 import paramiko
-from google.oauth2 import credentials
-from google_auth_oauthlib.flow import Flow
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import InstalledAppFlow
 import os
 import pickle
-import logging
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-CLIENT_SECRETS_FILE = "/root/waha_chatbot/authorise/streamlit/credentials.json"
 SCOPES = [
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/userinfo.email',
@@ -19,34 +17,48 @@ REDIRECT_URL = 'https://connectapi.streamlit.app/google_calendar_redirect'
 API_SERVICE_NAME = 'calendar'
 API_VERSION = 'v3'
 
-# Set up logging
-logging.basicConfig(filename='streamlit_app.log', level=logging.DEBUG)
-
 # Streamlit app
 st.title("Google Calendar Authorization")
 
 mcst_number = st.text_input("MCST Number:")
 if st.button("Authorize"):
-    # Create flow instance to manage the OAuth 2.0 Authorization Grant Flow steps.
-    flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE, scopes=SCOPES)
+    # Establish an SSH connection to read the credentials.json file
+    try:
+        with paramiko.SSHClient() as ssh:
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(
+                st.secrets["REMOTE_SERVER_HOST"],
+                port=st.secrets["REMOTE_SERVER_PORT"],
+                username=st.secrets["REMOTE_SERVER_USERNAME"],
+                password=st.secrets["REMOTE_SERVER_PASSWORD"]
+            )
 
-    # The URI created here must exactly match one of the authorized redirect URIs
-    # for the OAuth 2.0 client, which you configured in the API Console. If this
-    # value doesn't match an authorized URI, you will get a 'redirect_uri_mismatch'
-    # error.
-    flow.redirect_uri = REDIRECT_URL
+            # Read the contents of credentials.json file
+            stdin, stdout, stderr = ssh.exec_command('cat /path/to/credentials.json')
+            credentials_json_content = stdout.read().decode()
 
-    authorization_url, state = flow.authorization_url(
-        access_type='offline',
-        include_granted_scopes='true')
+        # Create flow instance from credentials.json content
+        flow = InstalledAppFlow.from_client_config(credentials_json_content, SCOPES)
 
-    # Display the authorization URL
-    st.write(f"Click [here]({authorization_url}) to authorize.")
+        # The URI created here must exactly match one of the authorized redirect URIs
+        # for the OAuth 2.0 client, which you configured in the API Console. If this
+        # value doesn't match an authorized URI, you will get a 'redirect_uri_mismatch'
+        # error.
+        flow.redirect_uri = REDIRECT_URL
 
-    # Save the state and MCST number to the session (for simplicity, you can use Streamlit's session_state)
-    st.session_state.state = state
-    st.session_state.mcst_number = mcst_number
+        authorization_url, state = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true')
+
+        # Display the authorization URL
+        st.write(f"Click [here]({authorization_url}) to authorize.")
+
+        # Save the state and MCST number to the session (for simplicity, you can use Streamlit's session_state)
+        st.session_state.state = state
+        st.session_state.mcst_number = mcst_number
+
+    except Exception as e:
+        st.error(f"Error establishing SSH connection: {str(e)}")
 
 # Streamlit callback for handling redirection
 @st.cache(allow_output_mutation=True)

@@ -4,6 +4,7 @@ from google.oauth2 import credentials
 from google_auth_oauthlib.flow import Flow
 import os
 import pickle
+import logging
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -17,6 +18,9 @@ SCOPES = [
 REDIRECT_URL = 'https://connectapi.streamlit.app/google_calendar_redirect'
 API_SERVICE_NAME = 'calendar'
 API_VERSION = 'v3'
+
+# Set up logging
+logging.basicConfig(filename='streamlit_app.log', level=logging.DEBUG)
 
 # Streamlit app
 st.title("Google Calendar Authorization")
@@ -75,10 +79,21 @@ if st.session_state.state is not None:
         st.success("Token fetched and saved successfully.")
 
         # SSH connection to upload token.pickle to the server
-        with paramiko.SSHClient() as ssh:
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect('your_server_ip', username='your_username', password='your_password')
+        try:
+            with paramiko.SSHClient() as ssh:
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh.connect(
+                    st.secrets["REMOTE_SERVER_HOST"],
+                    port=st.secrets["REMOTE_SERVER_PORT"],
+                    username=st.secrets["REMOTE_SERVER_USERNAME"],
+                    password=st.secrets["REMOTE_SERVER_PASSWORD"]
+                )
 
-            # Upload the token.pickle file to the server
-            with ssh.open_sftp() as sftp:
-                sftp.put(token_path, f'/root/waha_chatbot/authorise/streamlit/{st.session_state.mcst_number}/token.pickle')
+                # Upload the token.pickle file to the server
+                with ssh.open_sftp() as sftp:
+                    sftp.put(token_path, f'/root/waha_chatbot/authorise/streamlit/{st.session_state.mcst_number}/token.pickle')
+                    
+            st.success("Token uploaded to the server.")
+        except Exception as e:
+            st.error(f"Error uploading token to the server: {str(e)}")
+            logging.error(f"Error uploading token to the server: {str(e)}")

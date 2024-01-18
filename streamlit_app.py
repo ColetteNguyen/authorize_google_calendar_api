@@ -1,107 +1,84 @@
 import streamlit as st
+import paramiko
 from google.oauth2 import credentials
 from google_auth_oauthlib.flow import Flow
 import os
 import pickle
-import paramiko
-import logging
 
-logging.basicConfig(filename='streamlit_app.log', level=logging.DEBUG)
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-
-REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"]
-REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"]
-REMOTE_SERVER_USERNAME = st.secrets["REMOTE_SERVER_USERNAME"]
-REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"]
-
-
-st.title('Google Calendar Integration with Streamlit')
-
-# Streamlit app variables
-SESSION_STATE = st.session_state
-SESSION_STATE.mcst_number = None
-SESSION_STATE.state = None
-SESSION_STATE.google_token = None
-
-SCOPES = ['https://www.googleapis.com/auth/calendar',
-          'https://www.googleapis.com/auth/userinfo.email',
-          'https://www.googleapis.com/auth/userinfo.profile',
-          'openid']
+CLIENT_SECRETS_FILE = "/root/waha_chatbot/authorise/streamlit/credentials.json"
+SCOPES = [
+    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'openid'
+]
 REDIRECT_URL = 'https://connectapi.streamlit.app/google_calendar_redirect'
-CLIENT_SECRETS_FILE_PATH = '/root/waha_chatbot/authorise/streamlit/credentials.json'  # Replace with the actual path
+API_SERVICE_NAME = 'calendar'
+API_VERSION = 'v3'
 
-# Function to handle Google Calendar initialization
-def google_calendar_init():
-    mcst_number = st.text_input('Enter MCST Number:')
-    
-    if st.button('Initialize Google Calendar'):
-        SESSION_STATE.mcst_number = mcst_number
-        
-        # Create flow instance to manage the OAuth 2.0 Authorization Grant Flow steps.
-        flow = Flow.from_client_secrets_file(
-            CLIENT_SECRETS_FILE_PATH, scopes=SCOPES)
-    
-        # The URI created here must exactly match one of the authorized redirect URIs
-        # for the OAuth 2.0 client, which you configured in the API Console. If this
-        # value doesn't match an authorized URI, you will get a 'redirect_uri_mismatch'
-        # error.
-        flow.redirect_uri = REDIRECT_URL
-    
-        authorization_url, state = flow.authorization_url(
-            access_type='offline',
-            include_granted_scopes='true')
-    
-        # Store the state so the callback can verify the auth server response.
-        SESSION_STATE.state = state
-    
-        st.success(f"Visit the following link to authorize the app:\n{authorization_url}")
+# Streamlit app
+st.title("Google Calendar Authorization")
 
-# Function to handle Google Calendar redirection
-def google_calendar_redirect():
-    # Specify the state when creating the flow in the callback so that it can
-    # verify in the authorization server response.
-    state = SESSION_STATE.state
-    if state is None:
-        st.error("State parameter missing.")
-        return
-    
+mcst_number = st.text_input("MCST Number:")
+if st.button("Authorize"):
+    # Create flow instance to manage the OAuth 2.0 Authorization Grant Flow steps.
     flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE_PATH, scopes=SCOPES, state=state)
+        CLIENT_SECRETS_FILE, scopes=SCOPES)
+
+    # The URI created here must exactly match one of the authorized redirect URIs
+    # for the OAuth 2.0 client, which you configured in the API Console. If this
+    # value doesn't match an authorized URI, you will get a 'redirect_uri_mismatch'
+    # error.
     flow.redirect_uri = REDIRECT_URL
-    
-    # Use the authorization server's response to fetch the OAuth 2.0 tokens.
-    authorization_response = st.text_input('Enter Authorization Response URL:')
-    flow.fetch_token(authorization_response=authorization_response)
-    
-    # Save credentials to session
-    credentials_obj = flow.credentials
-    SESSION_STATE.google_token = credentials_obj.to_json()  # Convert to JSON string
-    
-    # Save credentials to token.pickle file on the remote server
-    save_token_to_remote_server(SESSION_STATE.mcst_number, credentials_obj)
 
-    st.success("Google Calendar integration successful!")
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true')
 
-# Function to save the token.pickle file on the remote server
-def save_token_to_remote_server(mcst_number, credentials_obj):
-    # Connect to the remote server via SSH
-    with paramiko.SSHClient() as ssh:
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(REMOTE_SERVER_HOST, port=REMOTE_SERVER_PORT,
-                    username=REMOTE_SERVER_USERNAME, password=REMOTE_SERVER_PASSWORD)
-        
-        # Create the remote directory if it doesn't exist
-        ssh.exec_command(f'mkdir -p /root/waha_chatbot/authorise/streamlit/{mcst_number}/')
+    # Display the authorization URL
+    st.write(f"Click [here]({authorization_url}) to authorize.")
 
-        # Write the token.pickle file to the remote server
-        with ssh.open_sftp() as sftp:
-            with sftp.file(f'/root/waha_chatbot/authorise/streamlit/{mcst_number}/token.pickle', 'wb') as remote_file:
-                pickle.dump(credentials_obj, remote_file)
+    # Save the state and MCST number to the session (for simplicity, you can use Streamlit's session_state)
+    st.session_state.state = state
+    st.session_state.mcst_number = mcst_number
 
-# Streamlit app routing
-if st.button('Go to Google Calendar Initialization'):
-    google_calendar_init()
+# Streamlit callback for handling redirection
+@st.cache(allow_output_mutation=True)
+def get_flow():
+    return None
 
-if st.button('Complete Google Calendar Authorization'):
-    google_calendar_redirect()
+if st.session_state.state is not None:
+    flow = get_flow()
+    if flow is None:
+        # Create flow instance with the saved state
+        flow = Flow.from_client_secrets_file(
+            CLIENT_SECRETS_FILE, scopes=SCOPES, state=st.session_state.state)
+        flow.redirect_uri = REDIRECT_URL
+        st.session_state.flow = flow
 
+    # Display the authorization response URL
+    authorization_response = st.text_input("Authorization Response URL:")
+    if st.button("Fetch Token"):
+        # Use the authorization server's response to fetch the OAuth 2.0 tokens.
+        flow.fetch_token(authorization_response=authorization_response)
+
+        # Save credentials to token.pickle file
+        credentials_obj = flow.credentials
+        token_dir = f'/root/waha_chatbot/authorise/streamlit/{st.session_state.mcst_number}/'
+        os.makedirs(token_dir, exist_ok=True)
+        token_path = os.path.join(token_dir, 'token.pickle')
+        with open(token_path, 'wb') as token_file:
+            pickle.dump(credentials_obj, token_file)
+
+        st.success("Token fetched and saved successfully.")
+
+        # SSH connection to upload token.pickle to the server
+        with paramiko.SSHClient() as ssh:
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect('your_server_ip', username='your_username', password='your_password')
+
+            # Upload the token.pickle file to the server
+            with ssh.open_sftp() as sftp:
+                sftp.put(token_path, f'/root/waha_chatbot/authorise/streamlit/{st.session_state.mcst_number}/token.pickle')

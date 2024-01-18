@@ -8,6 +8,11 @@ import logging
 
 logging.basicConfig(filename='streamlit_app.log', level=logging.DEBUG)
 
+REMOTE_SERVER_HOST = st.secrets["REMOTE_SERVER_HOST"]
+REMOTE_SERVER_PORT = st.secrets["REMOTE_SERVER_PORT"]
+REMOTE_SERVER_USERNAME = st.secrets["REMOTE_SERVER_USERNAME"]
+REMOTE_SERVER_PASSWORD = st.secrets["REMOTE_SERVER_PASSWORD"]
+
 st.title('Google Calendar Integration with Streamlit')
 
 # Streamlit app variables

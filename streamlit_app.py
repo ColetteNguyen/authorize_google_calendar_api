@@ -3,6 +3,7 @@ import paramiko
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 import os
+import pickle
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -20,57 +21,6 @@ API_VERSION = 'v3'
 st.title("Google Calendar Authorization")
 
 mcst_number = st.text_input("MCST Number:")
-
-# Streamlit callback for handling redirection
-@st.cache(allow_output_mutation=True)
-def get_flow():
-    return None
-
-if st.session_state.state is not None:
-    flow = get_flow()
-    if flow is None:
-        # Create flow instance with the saved state
-        flow = Flow.from_client_secrets_file(
-            CLIENT_SECRETS_FILE, scopes=SCOPES, state=st.session_state.state)
-        flow.redirect_uri = REDIRECT_URL
-        st.session_state.flow = flow
-
-    # Display the authorization response URL
-    authorization_response = st.text_input("Authorization Response URL:")
-    if st.button("Fetch Token"):
-        # Use the authorization server's response to fetch the OAuth 2.0 tokens.
-        flow.fetch_token(authorization_response=authorization_response)
-
-        # Save credentials to token.pickle file
-        credentials_obj = flow.credentials
-        token_dir = f'/root/waha_chatbot/authorise/streamlit/{st.session_state.mcst_number}/'
-        os.makedirs(token_dir, exist_ok=True)
-        token_path = os.path.join(token_dir, 'token.pickle')
-        with open(token_path, 'wb') as token_file:
-            pickle.dump(credentials_obj, token_file)
-
-        st.success("Token fetched and saved successfully.")
-
-        # SSH connection to upload token.pickle to the server
-        try:
-            with paramiko.SSHClient() as ssh:
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh.connect(
-                    st.secrets["REMOTE_SERVER_HOST"],
-                    port=st.secrets["REMOTE_SERVER_PORT"],
-                    username=st.secrets["REMOTE_SERVER_USERNAME"],
-                    password=st.secrets["REMOTE_SERVER_PASSWORD"]
-                )
-
-                # Upload the token.pickle file to the server
-                with ssh.open_sftp() as sftp:
-                    sftp.put(token_path, f'/root/waha_chatbot/authorise/streamlit/{st.session_state.mcst_number}/token.pickle')
-                    
-            st.success("Token uploaded to the server.")
-        except Exception as e:
-            st.error(f"Error uploading token to the server: {str(e)}")
-            logging.error(f"Error uploading token to the server: {str(e)}")
-
 if st.button("Authorize"):
     try:
         # Establish an SSH connection to download credentials.json file
@@ -99,10 +49,6 @@ if st.button("Authorize"):
         # Display the authorization URL
         st.write(f"Click [here]({authorization_url}) to authorize.")
 
-        # Initialize the state in the session_state
-        if "state" not in st.session_state:
-            st.session_state.state = None
-
         # Save the state and MCST number to the session_state
         st.session_state.state = state
         st.session_state.mcst_number = mcst_number
@@ -113,3 +59,54 @@ if st.button("Authorize"):
         # Close the SFTP connection
         if sftp:
             sftp.close()
+
+# Streamlit callback for handling redirection
+@st.cache(allow_output_mutation=True)
+def get_flow():
+    return InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES)
+
+if st.session_state.state is not None:
+    # Create flow instance with the saved state
+    st.session_state.flow = get_flow()
+    st.session_state.flow.redirect_uri = REDIRECT_URL
+
+    # Display the authorization response URL
+    authorization_response = st.text_input("Authorization Response URL:")
+    if st.button("Fetch Token"):
+        try:
+            # Use the authorization server's response to fetch the OAuth 2.0 tokens.
+            st.session_state.flow.fetch_token(authorization_response=authorization_response)
+
+            # Save credentials to token.pickle file
+            credentials_obj = st.session_state.flow.credentials
+            token_dir = f'/root/waha_chatbot/authorise/streamlit/{st.session_state.mcst_number}/'
+            os.makedirs(token_dir, exist_ok=True)
+            token_path = os.path.join(token_dir, 'token.pickle')
+            with open(token_path, 'wb') as token_file:
+                pickle.dump(credentials_obj, token_file)
+
+            st.success("Token fetched and saved successfully.")
+
+            # SSH connection to upload token.pickle to the server
+            try:
+                with paramiko.SSHClient() as ssh:
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    ssh.connect(
+                        st.secrets["REMOTE_SERVER_HOST"],
+                        port=st.secrets["REMOTE_SERVER_PORT"],
+                        username=st.secrets["REMOTE_SERVER_USERNAME"],
+                        password=st.secrets["REMOTE_SERVER_PASSWORD"]
+                    )
+
+                    # Upload the token.pickle file to the server
+                    with ssh.open_sftp() as sftp:
+                        sftp.put(token_path, f'/root/waha_chatbot/authorise/streamlit/{st.session_state.mcst_number}/token.pickle')
+                        
+                st.success("Token uploaded to the server.")
+            except Exception as e:
+                st.error(f"Error uploading token to the server: {str(e)}")
+
+        except Exception as e:
+            st.error(f"Error fetching token: {str(e)}")
+
+

@@ -49,9 +49,9 @@ if st.button("Authorize"):
         # Display the authorization URL
         st.write(f"Click [here]({authorization_url}) to authorize.")
 
-        # Save the state and MCST number to the session (for simplicity, you can use Streamlit's session_state)
-        st.session_state.state = state
-        st.session_state.mcst_number = mcst_number
+        # Save the state and MCST number to the session_state
+        st.session_state["state"] = state
+        st.session_state["mcst_number"] = mcst_number
 
     except Exception as e:
         st.error(f"Error establishing SSH connection or loading credentials: {str(e)}")

@@ -20,48 +20,7 @@ API_VERSION = 'v3'
 st.title("Google Calendar Authorization")
 
 mcst_number = st.text_input("MCST Number:")
-if st.button("Authorize"):
-    try:
-        # Establish an SSH connection to download credentials.json file
-        with paramiko.Transport((st.secrets["REMOTE_SERVER_HOST"], st.secrets["REMOTE_SERVER_PORT"])) as transport:
-            transport.connect(username=st.secrets["REMOTE_SERVER_USERNAME"], password=st.secrets["REMOTE_SERVER_PASSWORD"])
-            sftp = paramiko.SFTPClient.from_transport(transport)
 
-            # Download credentials.json
-            remote_credentials_path = '/root/waha_chatbot/authorise/credentials.json'
-            local_credentials_path = 'credentials.json'
-            sftp.get(remote_credentials_path, local_credentials_path)
-
-        # Load credentials from the downloaded JSON file
-        flow = InstalledAppFlow.from_client_secrets_file(local_credentials_path, SCOPES)
-        
-        # The URI created here must exactly match one of the authorized redirect URIs
-        # for the OAuth 2.0 client, which you configured in the API Console. If this
-        # value doesn't match an authorized URI, you will get a 'redirect_uri_mismatch'
-        # error.
-        flow.redirect_uri = REDIRECT_URL
-
-        authorization_url, state = flow.authorization_url(
-            access_type='offline',
-            include_granted_scopes='true')
-
-        # Display the authorization URL
-        st.write(f"Click [here]({authorization_url}) to authorize.")
-
-        # Initialize the state in the session_state
-        if "state" not in st.session_state:
-            st.session_state.state = None
-
-        # Save the state and MCST number to the session_state
-        st.session_state.state = state
-        st.session_state.mcst_number = mcst_number
-
-    except Exception as e:
-        st.error(f"Error establishing SSH connection or loading credentials: {str(e)}")
-    finally:
-        # Close the SFTP connection
-        if sftp:
-            sftp.close()
 # Streamlit callback for handling redirection
 @st.cache(allow_output_mutation=True)
 def get_flow():
@@ -111,3 +70,46 @@ if st.session_state.state is not None:
         except Exception as e:
             st.error(f"Error uploading token to the server: {str(e)}")
             logging.error(f"Error uploading token to the server: {str(e)}")
+
+if st.button("Authorize"):
+    try:
+        # Establish an SSH connection to download credentials.json file
+        with paramiko.Transport((st.secrets["REMOTE_SERVER_HOST"], st.secrets["REMOTE_SERVER_PORT"])) as transport:
+            transport.connect(username=st.secrets["REMOTE_SERVER_USERNAME"], password=st.secrets["REMOTE_SERVER_PASSWORD"])
+            sftp = paramiko.SFTPClient.from_transport(transport)
+
+            # Download credentials.json
+            remote_credentials_path = '/root/waha_chatbot/authorise/credentials.json'
+            local_credentials_path = 'credentials.json'
+            sftp.get(remote_credentials_path, local_credentials_path)
+
+        # Load credentials from the downloaded JSON file
+        flow = InstalledAppFlow.from_client_secrets_file(local_credentials_path, SCOPES)
+        
+        # The URI created here must exactly match one of the authorized redirect URIs
+        # for the OAuth 2.0 client, which you configured in the API Console. If this
+        # value doesn't match an authorized URI, you will get a 'redirect_uri_mismatch'
+        # error.
+        flow.redirect_uri = REDIRECT_URL
+
+        authorization_url, state = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true')
+
+        # Display the authorization URL
+        st.write(f"Click [here]({authorization_url}) to authorize.")
+
+        # Initialize the state in the session_state
+        if "state" not in st.session_state:
+            st.session_state.state = None
+
+        # Save the state and MCST number to the session_state
+        st.session_state.state = state
+        st.session_state.mcst_number = mcst_number
+
+    except Exception as e:
+        st.error(f"Error establishing SSH connection or loading credentials: {str(e)}")
+    finally:
+        # Close the SFTP connection
+        if sftp:
+            sftp.close()

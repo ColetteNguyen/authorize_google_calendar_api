@@ -22,24 +22,20 @@ st.title("Google Calendar Authorization")
 
 mcst_number = st.text_input("MCST Number:")
 if st.button("Authorize"):
-    # Establish an SSH connection to read the credentials.json file
     try:
-        with paramiko.SSHClient() as ssh:
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(
-                st.secrets["REMOTE_SERVER_HOST"],
-                port=st.secrets["REMOTE_SERVER_PORT"],
-                username=st.secrets["REMOTE_SERVER_USERNAME"],
-                password=st.secrets["REMOTE_SERVER_PASSWORD"]
-            )
+        # Establish an SSH connection to download credentials.json file
+        with paramiko.Transport((st.secrets["REMOTE_SERVER_HOST"], st.secrets["REMOTE_SERVER_PORT"])) as transport:
+            transport.connect(username=st.secrets["REMOTE_SERVER_USERNAME"], password=st.secrets["REMOTE_SERVER_PASSWORD"])
+            sftp = paramiko.SFTPClient.from_transport(transport)
 
-            # Read the contents of credentials.json file
-            stdin, stdout, stderr = ssh.exec_command('cat /path/to/credentials.json')
-            credentials_json_content = stdout.read().decode()
+            # Download credentials.json
+            remote_credentials_path = '/root/waha_chatbot/authorise/credentials.json'
+            local_credentials_path = 'credentials.json'
+            sftp.get(remote_credentials_path, local_credentials_path)
 
-        # Create flow instance from credentials.json content
-        flow = InstalledAppFlow.from_client_config(credentials_json_content, SCOPES)
-
+        # Load credentials from the downloaded JSON file
+        flow = InstalledAppFlow.from_client_secrets_file(local_credentials_path, SCOPES)
+        
         # The URI created here must exactly match one of the authorized redirect URIs
         # for the OAuth 2.0 client, which you configured in the API Console. If this
         # value doesn't match an authorized URI, you will get a 'redirect_uri_mismatch'
@@ -58,7 +54,11 @@ if st.button("Authorize"):
         st.session_state.mcst_number = mcst_number
 
     except Exception as e:
-        st.error(f"Error establishing SSH connection: {str(e)}")
+        st.error(f"Error establishing SSH connection or loading credentials: {str(e)}")
+    finally:
+        # Close the SFTP connection
+        if sftp:
+            sftp.close()
 
 # Streamlit callback for handling redirection
 @st.cache(allow_output_mutation=True)

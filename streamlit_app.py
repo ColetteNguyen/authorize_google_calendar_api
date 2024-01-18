@@ -25,8 +25,8 @@ SCOPES = ['https://www.googleapis.com/auth/calendar',
           'https://www.googleapis.com/auth/userinfo.email',
           'https://www.googleapis.com/auth/userinfo.profile',
           'openid']
-REDIRECT_URL = 'http://localhost:8501/google_calendar_redirect'
-CLIENT_SECRETS_FILE_PATH = '/path/to/client_secrets.json'  # Replace with the actual path
+REDIRECT_URL = 'https://connectapi.streamlit.app/google_calendar_redirect'
+CLIENT_SECRETS_FILE_PATH = '/root/waha_chatbot/authorise/streamlit/credentials.json'  # Replace with the actual path
 
 # Function to handle Google Calendar initialization
 def step1_authorize():
@@ -82,11 +82,11 @@ def save_token_to_remote_server(mcst_number, credentials_obj):
                     username=REMOTE_SERVER_USERNAME, password=REMOTE_SERVER_PASSWORD)
         
         # Create the remote directory if it doesn't exist
-        ssh.exec_command(f'mkdir -p /path/to/{mcst_number}/')
+        ssh.exec_command(f'mkdir -p /root/waha_chatbot/authorise/streamlit/{mcst_number}/')
 
         # Write the token.pickle file to the remote server
         with ssh.open_sftp() as sftp:
-            with sftp.file(f'/path/to/{mcst_number}/token.pickle', 'wb') as remote_file:
+            with sftp.file(f'/root/waha_chatbot/authorise/streamlit/{mcst_number}/token.pickle', 'wb') as remote_file:
                 pickle.dump(credentials_obj, remote_file)
 
 # Streamlit app routing
